@@ -21,6 +21,9 @@ class ProcessCsvUpload implements ShouldBeUnique, ShouldQueue
 {
     use Queueable;
 
+    // Unique lock expires so a lost job (e.g. horizon:clear) can be re-dispatched.
+    public int $uniqueFor = 3600;
+
     private const MAX_ERROR_SAMPLES = 100;
 
     // SQLite allows 32,766 bind parameters. Each product binds 11 including timestamps.
