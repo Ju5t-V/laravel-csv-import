@@ -92,6 +92,14 @@ Run the checks in Docker: `docker compose exec app vendor/bin/pest`, `vendor/bin
 - **`retry_after` 660 > job timeout 600.** Redis must not hand a job to a second worker while the first is still running. The job also uses `WithoutOverlapping` and a one-hour unique lock per upload.
 - **Millisecond timestamps.** Laravel binds dates on SQLite as `Y-m-d H:i:s`, which made a sub-second import show `duration_ms` 0. A small SQLite connection class binds `Y-m-d H:i:s.v` instead.
 
+## Production notes
+
+- Set `APP_ENV=production` and `APP_DEBUG=false`.
+- Generate the Reverb credentials (`REVERB_APP_KEY`, `REVERB_APP_SECRET`). The Docker entrypoint does this on first bootstrap; elsewhere use `openssl rand -hex 16`. Never ship the example values.
+- Horizon is gated: the dashboard is reachable only when `APP_ENV=local` and denied everywhere else.
+- Use a private broadcast channel per session instead of the public `uploads` channel once there is any notion of a user or session.
+- Prune old uploads: stored files in `storage/app/private/uploads` and their `uploads` rows are kept forever, so schedule a cleanup.
+
 ## Benchmark
 
 100,000 rows, a deliberately dirty file (BOM, CP1252 bytes, blank and duplicate keys, bad prices, control characters) with 900-byte padded descriptions: 101,327,648 bytes (96.6 MiB). Generated with `php artisan products:generate-csv 100000 --dirty --pad=900`.
