@@ -43,6 +43,9 @@ return [
             ],
             'client_options' => [
                 // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
+                // Keep a downed Reverb cheap: at most about 2 s per broadcast.
+                'connect_timeout' => 1,
+                'timeout' => 2,
             ],
         ],
 
