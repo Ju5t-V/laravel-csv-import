@@ -30,3 +30,4 @@ Thumbs.db
 /storage/.bootstrapped
 /storage/framework/phpstan
 /.phpstan.cache
+/.pm/
