@@ -15,7 +15,7 @@ class StoreUploadRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file' => 'required|file|mimes:csv,txt|max:'.Config::integer('import.max_kb'),
+            'file' => 'required|file|extensions:csv,txt|max:'.Config::integer('import.max_kb'),
         ];
     }
 

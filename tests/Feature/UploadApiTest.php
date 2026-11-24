@@ -34,6 +34,34 @@ it('rejects a non-CSV file', function () {
     $this->postJson('/uploads', ['file' => $file])->assertUnprocessable()->assertJsonValidationErrors('file');
 });
 
+it('rejects files whose extension is not csv or txt', function (string $name) {
+    $file = UploadedFile::fake()->createWithContent($name, "key,name\nA,Widget\n");
+
+    $this->postJson('/uploads', ['file' => $file])->assertUnprocessable()->assertJsonValidationErrors('file');
+})->with(['image.png', 'malware.exe']);
+
+it('accepts a dirty csv containing a 0x01 byte', function () {
+    Queue::fake();
+    Storage::fake('local');
+    $file = UploadedFile::fake()->createWithContent('dirty.csv', "UNIQUE_KEY,PRODUCT_TITLE\nA,Wid\x01get\n");
+
+    $this->postJson('/uploads', ['file' => $file])->assertAccepted();
+
+    Queue::assertPushed(ProcessCsvUpload::class);
+});
+
+it('accepts a GIF renamed to csv at upload but the job marks it failed', function () {
+    config(['broadcasting.default' => 'null', 'queue.default' => 'sync']);
+    Storage::fake('local');
+    $file = UploadedFile::fake()->createWithContent('image.csv', "GIF89a\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff\x00\x00\x00;");
+
+    $this->postJson('/uploads', ['file' => $file])->assertAccepted();
+
+    expect(Upload::query()->sole())
+        ->status->toBe(UploadStatus::Failed)
+        ->error_message->toContain('UNIQUE_KEY');
+});
+
 it('rejects a file above the configured limit', function () {
     config(['import.max_kb' => 1]);
     $file = UploadedFile::fake()->create('products.csv', 2, 'text/csv');

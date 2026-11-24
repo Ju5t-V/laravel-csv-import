@@ -91,6 +91,7 @@ Run the checks in Docker: `docker compose exec app vendor/bin/pest`, `vendor/bin
 - **SQLite: WAL + IMMEDIATE, and why PHP 8.4.** WAL lets the page read while the worker writes. Transactions begin `IMMEDIATE`, so the write lock is taken up front and a writer does not fail halfway after reading. Laravel only honours `transaction_mode` on PHP 8.4+, so the Docker image is PHP 8.4. CI also runs 8.3, where the import still works but transactions are deferred, and `ConfigTest` skips its 8.4 assertion.
 - **`retry_after` 660 > job timeout 600.** Redis must not hand a job to a second worker while the first is still running. The job also uses `WithoutOverlapping` and a one-hour unique lock per upload.
 - **Millisecond timestamps.** Laravel binds dates on SQLite as `Y-m-d H:i:s`, which made a sub-second import show `duration_ms` 0. A small SQLite connection class binds `Y-m-d H:i:s.v` instead.
+- **Upload validation by extension, not MIME.** The form request uses `extensions:csv,txt` rather than `mimes`, because `finfo` calls any file with a `0x01` byte `application/octet-stream` and the point of the app is to clean such files. Content safety rests on the importer: a non-CSV fails header validation and is marked Failed, and files are stored privately as `uploads/{ulid}.csv` and never served.
 
 ## Production notes
 
@@ -112,9 +113,7 @@ Machine: Docker Desktop on Windows 11 (WSL2 kernel 6.6.87), AMD Ryzen 5 7500F (1
 | CLI, same file again | 6.72 s | 38.0 MB allocated (33.4 MB used) | 0 inserted, 98,970 updated, 1,030 skipped |
 | HTTP `curl -F` POST /uploads, 100.96 MB clean padded file, to Completed | about 11 s total (3.9 s for the upload to return 202, then 6.7 s import) | n/a | 100,000 inserted |
 
-Notes: each CLI run is a fresh process; broadcasting off. The HTTP run used PHP's built-in server and the `database` queue driver with `queue:work` on a separate SQLite file, not Redis/Horizon, and the total is the upload time plus the worker's reported `duration_ms` (6720 ms), with small polling and pickup overhead on top. The HTTP file is the clean variant, not the dirty one, for the reason below.
-
-**Known issue found while benchmarking.** A file containing a control character such as `0x01` is detected by `finfo` as `application/octet-stream`, so `mimes:csv,txt` rejects it with a 422. The dirty sample from `--dirty` contains `0x01`, so it imports from the CLI and from `composer demo` but is rejected by `POST /uploads`. Other dirty content (BOM, CP1252 bytes, `0x07`) is detected as `text/csv` and passes. The validation rule was left unchanged.
+Notes: each CLI run is a fresh process; broadcasting off. The HTTP run used PHP's built-in server and the `database` queue driver with `queue:work` on a separate SQLite file, not Redis/Horizon, and the total is the upload time plus the worker's reported `duration_ms` (6720 ms), with small polling and pickup overhead on top. The HTTP file is the clean variant that was benchmarked at the time.
 
 ## With more time
 
@@ -124,7 +123,6 @@ Notes: each CLI run is a fresh process; broadcasting off. The HTTP run used PHP'
 - Postgres or MySQL support (the upsert is portable; the SQLite pragmas are not).
 - Meilisearch and a product browse/search page.
 - A row-error download UI (errors are sampled, capped at 100 per upload, and not shown in the page yet).
-- Relax or replace the `mimes` check so files with control characters are accepted and cleaned by the sanitizer.
 
 ## AI usage
 
