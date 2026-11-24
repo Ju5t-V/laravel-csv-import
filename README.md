@@ -2,24 +2,24 @@
 
 Upload a product CSV, a Horizon worker streams it into SQLite with bulk upserts keyed on `UNIQUE_KEY`, and a live list shows status, progress and inserted/updated/skipped counts.
 
-<!-- TODO V: Loom link -->
-<!-- TODO V: GIF -->
-![Demo GIF placeholder](docs/demo.gif)
-
-[![CI](https://github.com/YOUR_GH_USER/yoprint-csv-import/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_GH_USER/yoprint-csv-import/actions/workflows/ci.yml)
+[![CI](https://github.com/Ju5t-V/laravel-csv-import/actions/workflows/ci.yml/badge.svg)](https://github.com/Ju5t-V/laravel-csv-import/actions/workflows/ci.yml)
 
 Stack: PHP 8.3+ (the Docker image is 8.4), Laravel 13, SQLite (WAL), Redis 7 + Horizon, Reverb + Echo, Blade + Alpine + Tailwind v4, league/csv, Pest, Larastan level 6, Pint.
 
 ## Quick start (Docker)
 
+**Option A: double-click `start.bat` (Windows) or run `./start.sh` (macOS/Linux).** It checks that Docker is running, starts the stack, waits for the app and opens http://localhost:8000. Stop with `docker compose down`.
+
+**Option B: by hand.**
+
 ```bash
-git clone https://github.com/YOUR_GH_USER/yoprint-csv-import.git
-cd yoprint-csv-import
+git clone https://github.com/Ju5t-V/laravel-csv-import.git
+cd laravel-csv-import
 docker compose up -d
 # open http://localhost:8000
 ```
 
-The first start installs Composer and npm packages, creates `.env` from `.env.example`, generates the key and migrates, so give it a minute or two (`docker compose logs -f app`). Services: app (8000), horizon, reverb (8080), vite (5173), redis.
+The first start installs Composer and npm packages, creates `.env` from `.env.example`, generates the key and migrates, so give it a minute or two (`docker compose logs -f app`). Services: app (8000), horizon, reverb (8080), vite (5173), redis. Keep the vite service running, or run `npm run build` (and delete `public/hot` if vite was stopped).
 
 Try it with generated data:
 
@@ -50,7 +50,7 @@ flowchart LR
     H -- "stream file, chunked upsert + checkpoint" --> D
     H -- "UploadUpdated, at most every 0.5 s" --> W[Reverb]
     W -- "public channel uploads" --> B
-    B -. "poll GET /uploads every 3 s when the socket is down" .-> A
+    B -. "poll GET /uploads first after 5 s, then every 3 s, when the socket is down" .-> A
 ```
 
 ## Reviewer's map
@@ -87,7 +87,7 @@ Run the checks in Docker: `docker compose exec app vendor/bin/pest`, `vendor/bin
   | Delete invalid bytes (`iconv //IGNORE`) | `Tee ` (the registered mark is lost) |
   | Convert from CP1252 (this app) | `Tee ®` (bytes `C2 AE`, covered by a byte-level test) |
 
-- **Public broadcast channel.** The app has no users or login, so there is nobody to authorize. Events go to the public `uploads` channel and carry the same fields as the list API. A private channel would be the choice once auth exists. Broadcasting never blocks an import: `UploadUpdated` is `ShouldRescue`, and the Reverb client has `connect_timeout` 1 s and `timeout` 2 s, so a downed Reverb costs at most about 2 s per broadcast. The page then falls back to polling every 3 s.
+- **Public broadcast channel.** The app has no users or login, so there is nobody to authorize. Events go to the public `uploads` channel and carry the same fields as the list API. A private channel would be the choice once auth exists. Broadcasting never blocks an import: `UploadUpdated` is `ShouldRescue`, and the Reverb client has `connect_timeout` 1 s and `timeout` 2 s, so a downed Reverb costs at most about 2 s per broadcast. The page then falls back to polling: the first poll starts after 5 s offline, then every 3 s.
 - **SQLite: WAL + IMMEDIATE, and why PHP 8.4.** WAL lets the page read while the worker writes. Transactions begin `IMMEDIATE`, so the write lock is taken up front and a writer does not fail halfway after reading. Laravel only honours `transaction_mode` on PHP 8.4+, so the Docker image is PHP 8.4. CI also runs 8.3, where the import still works but transactions are deferred, and `ConfigTest` skips its 8.4 assertion.
 - **`retry_after` 660 > job timeout 600.** Redis must not hand a job to a second worker while the first is still running. The job also uses `WithoutOverlapping` and a one-hour unique lock per upload.
 - **Millisecond timestamps.** Laravel binds dates on SQLite as `Y-m-d H:i:s`, which made a sub-second import show `duration_ms` 0. A small SQLite connection class binds `Y-m-d H:i:s.v` instead.
@@ -99,6 +99,7 @@ Run the checks in Docker: `docker compose exec app vendor/bin/pest`, `vendor/bin
 - Generate the Reverb credentials (`REVERB_APP_KEY`, `REVERB_APP_SECRET`). The Docker entrypoint does this on first bootstrap; elsewhere use `openssl rand -hex 16`. Never ship the example values.
 - Horizon is gated: the dashboard is reachable only when `APP_ENV=local` and denied everywhere else.
 - Use a private broadcast channel per session instead of the public `uploads` channel once there is any notion of a user or session.
+- Upload honeypot: a hidden `website` field; if a bot fills it, `POST /uploads` returns a fake 202 and stores and queues nothing (logged with the IP only). It stops naive bots, not targeted abuse; rate limiting stays.
 - Prune old uploads: stored files in `storage/app/private/uploads` and their `uploads` rows are kept forever, so schedule a cleanup.
 
 ## Benchmark

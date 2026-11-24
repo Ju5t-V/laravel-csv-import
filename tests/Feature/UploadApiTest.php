@@ -154,3 +154,28 @@ it('links duplicates to the earliest other upload with the same bytes', function
     $this->getJson("/uploads/{$first}")->assertOk()->assertJsonPath('data.duplicate_of', $second);
     $this->getJson('/uploads?limit=1')->assertOk()->assertJsonPath('data.0.duplicate_of', $first);
 });
+
+it('accepts an upload with an empty honeypot', function () {
+    Queue::fake();
+    Storage::fake('local');
+    $file = UploadedFile::fake()->createWithContent('ok.csv', "UNIQUE_KEY\nA\n");
+
+    $this->postJson('/uploads', ['file' => $file, 'website' => ''])->assertAccepted();
+
+    Queue::assertPushed(ProcessCsvUpload::class);
+    expect(Upload::query()->count())->toBe(1);
+});
+
+it('fakes success and stores nothing when the honeypot is filled', function () {
+    Queue::fake();
+    Storage::fake('local');
+    $file = UploadedFile::fake()->createWithContent('bot.csv', "UNIQUE_KEY\nA\n");
+
+    $this->postJson('/uploads', ['file' => $file, 'website' => 'http://spam.example'])
+        ->assertAccepted()
+        ->assertJsonPath('data.status', 'pending');
+
+    Queue::assertNothingPushed();
+    Storage::disk('local')->assertDirectoryEmpty('uploads');
+    expect(Upload::query()->count())->toBe(0);
+});

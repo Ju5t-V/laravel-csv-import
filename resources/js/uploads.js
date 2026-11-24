@@ -167,6 +167,7 @@ export default () => ({
         xhr.onerror = () => this.fail('Network error during upload.');
         const form = new FormData();
         form.append('file', file);
+        form.append('website', this.$refs.website?.value ?? '');
         xhr.send(form);
     },
 

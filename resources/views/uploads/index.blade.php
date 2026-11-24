@@ -34,6 +34,9 @@
                    @change="pick($event.target.files[0]); $event.target.value = ''" @click.stop>
         </div>
 
+        <input type="text" name="website" x-ref="website" value="" autocomplete="off" tabindex="-1" aria-hidden="true"
+               class="absolute -left-[9999px] h-0 w-0 overflow-hidden opacity-0">
+
         <template x-if="current">
             <div class="mt-3 rounded-lg border border-slate-200 bg-white p-3 text-sm">
                 <div class="flex justify-between gap-3">
