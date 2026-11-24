@@ -25,9 +25,8 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
-/database/sqlite/*
-!/database/sqlite/.gitkeep
-/storage/.bootstrapped
 /storage/framework/phpstan
 /.phpstan.cache
 /.pm/
+/CLAUDE.md
+/AGENTS.md
