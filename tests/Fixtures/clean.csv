@@ -1,0 +1,4 @@
+product_title,unique_key,PRODUCT_DESCRIPTION,STYLE#,SANMAR_MAINFRAME_COLOR,SIZE,COLOR_NAME,PIECE_PRICE,IGNORED
+Alpha,A,<b>Soft cotton</b>,S1,NAVY,M,Navy,"1,234.00",extra
+Beta,B,,S2,WHITE,L,White,$12.50,extra
+Gamma,C,,S3,BLACK,S,Black,12.5,extra

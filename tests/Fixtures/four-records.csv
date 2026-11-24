@@ -1,0 +1,6 @@
+UNIQUE_KEY,PRODUCT_TITLE,PRODUCT_DESCRIPTION
+A,Alpha,
+B,Beta,"This record contains a
+quoted newline."
+A,Alpha revised,
+,Blank key,
