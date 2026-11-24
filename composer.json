@@ -1,11 +1,13 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "ju5t-v/laravel-csv-import",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "Upload a product CSV and import it in the background with chunked upserts, live progress over Reverb and Horizon.",
     "keywords": [
         "laravel",
-        "framework"
+        "csv",
+        "import",
+        "horizon"
     ],
     "license": "MIT",
     "require": {
@@ -20,7 +22,6 @@
         "fakerphp/faker": "^1.23",
         "larastan/larastan": "^3.15",
         "laravel/pail": "^1.2.5",
-        "laravel/pao": "^1.0.6",
         "laravel/pint": "^1.27",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
@@ -72,11 +73,6 @@
         ],
         "post-root-package-install": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
-        ],
-        "post-create-project-cmd": [
-            "@php artisan key:generate --ansi",
-            "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
-            "@php artisan migrate --graceful --ansi"
         ],
         "pre-package-uninstall": [
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
