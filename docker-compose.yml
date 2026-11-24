@@ -17,6 +17,7 @@ x-app: &app
     - sqlite-data:/var/www/html/database/sqlite
     - vendor:/var/www/html/vendor
     - node-modules:/var/www/html/node_modules
+  restart: unless-stopped
   environment: *env
   depends_on:
     redis:
@@ -50,6 +51,7 @@ services:
 
   redis:
     image: redis:7-alpine
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s

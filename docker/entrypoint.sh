@@ -22,9 +22,9 @@ if [ "$BOOTSTRAP" = "1" ]; then
     mkdir -p database/sqlite
     [ -f database/sqlite/database.sqlite ] || touch database/sqlite/database.sqlite
     php artisan migrate --force
-    touch storage/.bootstrapped
+    touch vendor/.bootstrapped
 else
-    until [ -f storage/.bootstrapped ]; do sleep 2; done
+    until [ -f vendor/.bootstrapped ]; do sleep 2; done
 fi
 
 exec "$@"
