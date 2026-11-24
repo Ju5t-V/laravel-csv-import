@@ -80,14 +80,18 @@ it('stores an upload and queues a pending import', function () {
 });
 
 it('lists newest uploads first and clamps the limit', function () {
-    $uploads = collect(range(0, 100))->map(fn (int $offset) => Upload::query()->create([
-        'original_name' => "products-{$offset}.csv",
-        'stored_path' => "uploads/products-{$offset}.csv",
-        'sha256' => hash('sha256', (string) $offset),
-        'size_bytes' => 10,
-        'status' => UploadStatus::Pending,
-        'created_at' => now()->subSeconds($offset),
-    ]));
+    $uploads = collect(range(0, 100))->map(function (int $offset) {
+        $upload = new Upload([
+            'original_name' => "products-{$offset}.csv",
+            'stored_path' => "uploads/products-{$offset}.csv",
+            'sha256' => hash('sha256', (string) $offset),
+            'size_bytes' => 10,
+            'status' => UploadStatus::Pending,
+        ]);
+        $upload->forceFill(['created_at' => now()->subSeconds($offset)])->save();
+
+        return $upload;
+    });
 
     $this->getJson('/uploads')->assertOk()->assertJsonCount(50, 'data');
     $this->getJson('/uploads?limit=2')->assertOk()->assertJsonCount(2, 'data')

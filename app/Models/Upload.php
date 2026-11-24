@@ -16,7 +16,23 @@ use Illuminate\Support\Str;
 class Upload extends Model
 {
     /** @var list<string> */
-    protected $guarded = ['id'];
+    protected $fillable = [
+        'public_id',
+        'original_name',
+        'stored_path',
+        'sha256',
+        'size_bytes',
+        'status',
+        'progress',
+        'processed_rows',
+        'inserted_rows',
+        'updated_rows',
+        'skipped_rows',
+        'processed_offset',
+        'error_message',
+        'started_at',
+        'finished_at',
+    ];
 
     protected static function booted(): void
     {

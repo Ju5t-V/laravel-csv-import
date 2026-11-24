@@ -10,7 +10,12 @@ class UploadRowError extends Model
     public const UPDATED_AT = null;
 
     /** @var list<string> */
-    protected $guarded = ['id'];
+    protected $fillable = [
+        'upload_id',
+        'line_number',
+        'reason',
+        'raw',
+    ];
 
     /**
      * @return array<string, string>

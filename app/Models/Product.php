@@ -8,7 +8,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Product extends Model
 {
     /** @var list<string> */
-    protected $guarded = ['id'];
+    protected $fillable = [
+        'unique_key',
+        'product_title',
+        'product_description',
+        'style_number',
+        'sanmar_mainframe_color',
+        'size',
+        'color_name',
+        'piece_price',
+        'last_upload_id',
+    ];
 
     /** @return BelongsTo<Upload, $this> */
     public function lastUpload(): BelongsTo
