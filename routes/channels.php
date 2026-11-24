@@ -1,7 +1,3 @@
 <?php
 
-use Illuminate\Support\Facades\Broadcast;
-
-Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
-    return (string) $user->id === (string) $id;
-});
+// No private channels yet: the app has no users, and events go to the public `uploads` channel.
